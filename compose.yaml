@@ -1,7 +1,8 @@
 # moon 部署编排。推送到 main 后由 moon-deployd 部署，规则见 HinaKalo/moon-infra。
+# 部署时自动提供的变量：IMAGE（本次构建的镜像）、APP_PORT（本项目专属端口）、APP_NAME、APP_DOMAIN、APP_URL
 x-moon:
-  # 公网入口：自动获得 https://<仓库名>.moonl.cloud（端口在 moon 上需唯一，建议 18100–18999）
-  upstream: 127.0.0.1:18100
+  # 公网入口：自动获得 https://<仓库名>.moonl.cloud
+  upstream: 127.0.0.1:${APP_PORT}
   # 共享平台：自动创建本项目专属的数据库与账号，注入 DATABASE_URL / REDIS_URL
   needs: [postgres, redis]
 
@@ -9,9 +10,13 @@ services:
   app:
     image: ${IMAGE}
     ports:
-      - "127.0.0.1:18100:8080"
+      - "127.0.0.1:${APP_PORT}:8080"
     environment:
       APP_NAME: ${APP_NAME}
+    # 私密配置放在 moon 的 /srv/apps/<仓库名>/secrets.env（不进 Git）
+    env_file:
+      - path: secrets.env
+        required: false
     mem_limit: 128m
     healthcheck:
       test: ["CMD", "/app", "-healthcheck"]
