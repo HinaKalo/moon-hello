@@ -1,0 +1,38 @@
+# CI/CD：每次推送与 PR 运行检查与安全扫描；main 分支检查全部通过后自动部署到 moon
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: HinaKalo/moon-infra/.github/workflows/ci-go.yml@main
+
+  security:
+    uses: HinaKalo/moon-infra/.github/workflows/security.yml@main
+    permissions:
+      contents: read
+      security-events: write
+
+  deploy:
+    needs: [ci, security]
+    # 只有 main 的推送/手动触发才部署；模板仓库本身不部署
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !github.event.repository.is_template
+    concurrency:
+      group: moon-deploy
+      cancel-in-progress: false
+    uses: HinaKalo/moon-infra/.github/workflows/deploy.yml@main
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
