@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: moon-deploy
+  cancel-in-progress: false
+
+jobs:
+  moon:
+    # 模板仓库本身不部署
+    if: ${{ !github.event.repository.is_template }}
+    uses: HinaKalo/moon-infra/.github/workflows/deploy.yml@main
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
