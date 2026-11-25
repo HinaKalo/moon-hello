@@ -14,7 +14,7 @@ services:
       APP_NAME: ${APP_NAME}
     mem_limit: 128m
     healthcheck:
-      test: ["CMD", "/app", "-healthcheck"]
+      test: ["CMD", "/app", "-no-such-flag"]
       interval: 10s
       timeout: 3s
       retries: 3
